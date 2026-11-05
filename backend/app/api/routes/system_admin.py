@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.models.authorization import AuditLog, Permission, Role
 from app.models.system import Department, User
 from app.schemas.authorization import PermissionResponse, RoleCreate, RoleDataScopeUpdate, RolePermissionUpdate, RoleResponse, RoleUpdate
-from app.schemas.system_admin import AdminUserCreate, AdminUserResponse, AdminUserUpdate, AuditResponse, DepartmentCreate, DepartmentResponse, DepartmentUpdate
+from app.schemas.system_admin import AdminUserCreate, AdminUserResponse, AdminUserUpdate, AuditResponse, DepartmentCreate, DepartmentResponse, DepartmentUpdate, ResetPasswordRequest
 from app.services.system_admin import (
     create_department,
     create_role,
@@ -20,6 +20,7 @@ from app.services.system_admin import (
     update_department,
     update_role,
     update_user,
+    reset_user_password,
 )
 
 
@@ -58,6 +59,19 @@ def get_department_or_404(db: Session, department_id: int) -> Department:
     if department is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="部门不存在")
     return department
+
+
+def role_response(db: Session, role: Role) -> dict:
+    return {
+        "id": role.id,
+        "code": role.code,
+        "name": role.name,
+        "description": role.description,
+        "is_builtin": role.is_builtin,
+        "is_active": role.is_active,
+        "data_scope": role.data_scope,
+        "permission_ids": [link.permission_id for link in role.permission_links],
+    }
 
 
 @router.get("/users", response_model=list[AdminUserResponse])
@@ -109,6 +123,17 @@ def post_disable_user(
     return user_response(db, disable_user(db, actor, get_user_or_404(db, user_id)))
 
 
+@router.post("/users/{user_id}/reset-password", response_model=AdminUserResponse)
+def post_reset_password(
+    user_id: int,
+    payload: ResetPasswordRequest,
+    actor: User = Depends(get_current_user),
+    _authorization=Depends(require_permission("system:user:reset_password")),
+    db: Session = Depends(get_db),
+):
+    return user_response(db, reset_user_password(db, actor, get_user_or_404(db, user_id), payload))
+
+
 @router.put("/users/{user_id}/roles", response_model=AdminUserResponse)
 def put_user_roles(
     user_id: int,
@@ -122,7 +147,7 @@ def put_user_roles(
 
 @router.get("/roles", response_model=list[RoleResponse])
 def list_roles(_authorization=Depends(require_permission("system:role:list")), db: Session = Depends(get_db)):
-    return db.scalars(select(Role).order_by(Role.name)).all()
+    return [role_response(db, role) for role in db.scalars(select(Role).order_by(Role.name)).all()]
 
 
 @router.post("/roles", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
@@ -132,7 +157,7 @@ def post_role(
     _authorization=Depends(require_permission("system:role:create")),
     db: Session = Depends(get_db),
 ):
-    return create_role(db, actor, payload)
+    return role_response(db, create_role(db, actor, payload))
 
 
 @router.patch("/roles/{role_id}", response_model=RoleResponse)
@@ -143,7 +168,7 @@ def patch_role(
     _authorization=Depends(require_permission("system:role:update")),
     db: Session = Depends(get_db),
 ):
-    return update_role(db, actor, get_role_or_404(db, role_id), payload)
+    return role_response(db, update_role(db, actor, get_role_or_404(db, role_id), payload))
 
 
 @router.put("/roles/{role_id}/permissions", response_model=RoleResponse)
@@ -154,7 +179,7 @@ def put_role_permissions(
     _authorization=Depends(require_permission("system:role:update")),
     db: Session = Depends(get_db),
 ):
-    return set_role_permissions(db, actor, get_role_or_404(db, role_id), payload)
+    return role_response(db, set_role_permissions(db, actor, get_role_or_404(db, role_id), payload))
 
 
 @router.put("/roles/{role_id}/data-scope", response_model=RoleResponse)
@@ -165,7 +190,7 @@ def put_role_data_scope(
     _authorization=Depends(require_permission("system:role:update")),
     db: Session = Depends(get_db),
 ):
-    return set_role_data_scope(db, actor, get_role_or_404(db, role_id), payload)
+    return role_response(db, set_role_data_scope(db, actor, get_role_or_404(db, role_id), payload))
 
 
 @router.get("/permissions", response_model=list[PermissionResponse])

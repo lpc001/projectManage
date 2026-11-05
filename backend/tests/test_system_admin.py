@@ -30,6 +30,7 @@ def setup_admin(session):
         "system:user:create",
         "system:user:update",
         "system:user:disable",
+        "system:user:reset_password",
         "system:role:list",
         "system:role:create",
         "system:role:update",
@@ -131,4 +132,32 @@ def test_platform_admin_can_create_role(client, session):
 
     assert response.status_code == 201
     assert response.json()["code"] == "reviewer"
+
+
+def test_platform_admin_can_edit_user_and_reset_password(client, session):
+    admin, member, department, _, _ = setup_admin(session)
+    headers = login(client, admin.username)
+
+    updated = client.patch(
+        f"/api/system-admin/users/{member.id}",
+        headers=headers,
+        json={"display_name": "成员新名称", "department_id": department.id},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["display_name"] == "成员新名称"
+
+    reset = client.post(
+        f"/api/system-admin/users/{member.id}/reset-password",
+        headers=headers,
+        json={"password": "new-password"},
+    )
+    assert reset.status_code == 200
+    assert client.post(
+        "/api/auth/login",
+        data={"username": member.username, "password": "correct-password"},
+    ).status_code == 401
+    assert client.post(
+        "/api/auth/login",
+        data={"username": member.username, "password": "new-password"},
+    ).status_code == 200
 

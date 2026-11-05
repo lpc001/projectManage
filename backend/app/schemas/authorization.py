@@ -27,6 +27,7 @@ class RoleResponse(BaseModel):
     is_builtin: bool
     is_active: bool
     data_scope: DataScopeType
+    permission_ids: list[int]
 
 
 class PermissionResponse(BaseModel):

@@ -22,6 +22,7 @@ export interface SystemRole {
   is_builtin: boolean
   is_active: boolean
   data_scope: DataScopeType
+  permission_ids: number[]
 }
 
 export interface SystemPermission {

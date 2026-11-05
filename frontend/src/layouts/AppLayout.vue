@@ -55,10 +55,6 @@ async function logout() {
           <el-icon><Key /></el-icon>
           <span>角色管理</span>
         </RouterLink>
-        <RouterLink v-if="auth.hasPermission('system:permission:list')" class="nav-item" :class="{ active: isActive('/system/permissions') }" to="/system/permissions">
-          <el-icon><Key /></el-icon>
-          <span>权限目录</span>
-        </RouterLink>
         <RouterLink v-if="auth.hasPermission('system:department:list')" class="nav-item" :class="{ active: isActive('/system/departments') }" to="/system/departments">
           <el-icon><FolderOpened /></el-icon>
           <span>部门管理</span>

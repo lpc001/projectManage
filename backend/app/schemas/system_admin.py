@@ -19,6 +19,10 @@ class AdminUserUpdate(BaseModel):
     is_active: bool | None = None
 
 
+class ResetPasswordRequest(BaseModel):
+    password: str = Field(min_length=8)
+
+
 class AdminUserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

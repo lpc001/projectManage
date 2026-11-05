@@ -19,7 +19,6 @@ const router = createRouter({
         { path: 'projects/:id/edit', name: 'project-edit', component: () => import('@/views/projects/ProjectEditView.vue') },
         { path: 'system/users', name: 'system-users', component: () => import('@/views/system/UsersView.vue'), meta: { requiredPermission: 'system:user:list' } },
         { path: 'system/roles', name: 'system-roles', component: () => import('@/views/system/RolesView.vue'), meta: { requiredPermission: 'system:role:list' } },
-        { path: 'system/permissions', name: 'system-permissions', component: () => import('@/views/system/PermissionsView.vue'), meta: { requiredPermission: 'system:permission:list' } },
         { path: 'system/departments', name: 'system-departments', component: () => import('@/views/system/DepartmentsView.vue'), meta: { requiredPermission: 'system:department:list' } },
         { path: 'system/audit', name: 'system-audit', component: () => import('@/views/system/AuditView.vue'), meta: { requiredPermission: 'system:audit:list' } },
       ],

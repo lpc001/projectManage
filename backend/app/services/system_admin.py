@@ -14,7 +14,7 @@ from app.models.authorization import (
 )
 from app.models.system import Department, User
 from app.schemas.authorization import RoleCreate, RoleDataScopeUpdate, RolePermissionUpdate, RoleUpdate
-from app.schemas.system_admin import AdminUserCreate, AdminUserUpdate, DepartmentCreate, DepartmentUpdate
+from app.schemas.system_admin import AdminUserCreate, AdminUserUpdate, DepartmentCreate, DepartmentUpdate, ResetPasswordRequest
 
 
 def write_audit(
@@ -110,6 +110,15 @@ def disable_user(db: Session, actor: User, user: User) -> User:
     user.is_active = False
     user.token_version += 1
     write_audit(db, actor, action="user.disable", target_type="user", target_id=user.id, summary=f"停用用户 {user.username}")
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def reset_user_password(db: Session, actor: User, user: User, payload: ResetPasswordRequest) -> User:
+    user.password_hash = hash_password(payload.password)
+    user.token_version += 1
+    write_audit(db, actor, action="user.password.reset", target_type="user", target_id=user.id, summary=f"重置用户 {user.username} 密码")
     db.commit()
     db.refresh(user)
     return user

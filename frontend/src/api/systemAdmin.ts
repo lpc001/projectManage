@@ -22,6 +22,11 @@ export async function disableSystemUser(userId: number) {
   return data
 }
 
+export async function resetSystemUserPassword(userId: number, password: string) {
+  const { data } = await http.post<SystemUser>(`/system-admin/users/${userId}/reset-password`, { password })
+  return data
+}
+
 export async function setSystemUserRoles(userId: number, roleIds: number[]) {
   const { data } = await http.put<SystemUser>(`/system-admin/users/${userId}/roles`, roleIds)
   return data
