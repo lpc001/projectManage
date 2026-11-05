@@ -1,6 +1,7 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.models.authorization import DataScopeType, Permission, PermissionType, Role
 from app.models.system import Department, User, UserRole
 
 
@@ -42,6 +43,17 @@ def test_usernames_and_department_codes_are_unique(session):
     session.commit()
 
     session.add(Department(name="重复部门", code="big-data"))
+    with pytest.raises(IntegrityError):
+        session.commit()
+
+
+def test_role_and_permission_codes_are_unique(session):
+    role = Role(code="pmo", name="PMO", data_scope=DataScopeType.ALL)
+    permission = Permission(code="project:list", name="查看项目", permission_type=PermissionType.API)
+    session.add_all([role, permission])
+    session.commit()
+
+    session.add(Role(code="pmo", name="重复角色", data_scope=DataScopeType.MEMBER))
     with pytest.raises(IntegrityError):
         session.commit()
 

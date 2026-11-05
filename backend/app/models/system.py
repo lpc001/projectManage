@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from sqlalchemy import Boolean, Enum, ForeignKey, String
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -44,6 +44,18 @@ class User(TimestampMixin, Base):
     )
     department_id: Mapped[int] = mapped_column(ForeignKey("sys_department.id"), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     department: Mapped[Department] = relationship(back_populates="users")
+    role_links: Mapped[list["UserRoleLink"]] = relationship(
+        "UserRoleLink",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        secondary="sys_user_role",
+        back_populates="users",
+        viewonly=True,
+    )
 

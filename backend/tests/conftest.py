@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
-from app.models import project, system  # noqa: F401
+from app.models import authorization, project, system  # noqa: F401
 
 
 @pytest.fixture(scope="session")
