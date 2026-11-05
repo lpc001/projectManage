@@ -10,6 +10,19 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const isAuthenticated = computed(() => Boolean(accessToken.value && user.value))
 
+  function hasPermission(code: string) {
+    if (!user.value) return false
+    return [
+      ...user.value.menu_permission_codes,
+      ...user.value.action_permission_codes,
+      ...user.value.api_permission_codes,
+    ].includes(code)
+  }
+
+  function hasAnyPermission(codes: string[]) {
+    return codes.some((code) => hasPermission(code))
+  }
+
   async function login(username: string, password: string) {
     loading.value = true
     try {
@@ -39,6 +52,6 @@ export const useAuthStore = defineStore('auth', () => {
     sessionStorage.removeItem('access_token')
   }
 
-  return { accessToken, user, loading, isAuthenticated, login, loadCurrentUser, logout }
+  return { accessToken, user, loading, isAuthenticated, hasPermission, hasAnyPermission, login, loadCurrentUser, logout }
 })
 

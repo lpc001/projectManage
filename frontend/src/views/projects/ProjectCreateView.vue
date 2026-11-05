@@ -80,7 +80,7 @@ onMounted(loadOptions)
 </script>
 
 <template>
-  <div v-if="auth.user?.role !== 'pmo'" class="empty-page">
+  <div v-if="!auth.hasPermission('project:create')" class="empty-page">
     <el-result icon="warning" title="没有新建项目权限" sub-title="新项目由 PMO 统一创建" />
   </div>
   <template v-else>

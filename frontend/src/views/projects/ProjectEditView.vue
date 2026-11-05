@@ -81,7 +81,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-if="!['pmo', 'department_head', 'project_manager'].includes(auth.user?.role ?? '')" class="empty-page">
+  <div v-if="!auth.hasPermission('project:update')" class="empty-page">
     <el-result icon="warning" title="没有编辑项目权限" />
   </div>
   <template v-else>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DataAnalysis, FolderOpened, Plus, SwitchButton } from '@element-plus/icons-vue'
+import { DataAnalysis, FolderOpened, Key, Plus, SwitchButton, UserFilled } from '@element-plus/icons-vue'
 
 import { useAuthStore } from '@/stores/auth'
 
@@ -17,8 +17,9 @@ const roleLabels = {
   member: '项目成员',
 } as const
 
-const roleLabel = computed(() => (auth.user ? roleLabels[auth.user.role] : ''))
-const canCreateProject = computed(() => auth.user?.role === 'pmo')
+const roleLabel = computed(() => auth.user?.roles.map((role) => role.name).join('、') || (auth.user?.role ? roleLabels[auth.user.role] : ''))
+const canCreateProject = computed(() => auth.hasPermission('project:create'))
+const canManageSystem = computed(() => auth.hasAnyPermission(['system:user:list', 'system:role:list', 'system:permission:list']))
 
 function isActive(path: string) {
   return route.path === path || route.path.startsWith(`${path}/`)
@@ -52,6 +53,27 @@ async function logout() {
         <RouterLink v-if="canCreateProject" class="nav-item" :class="{ active: isActive('/projects/new') }" to="/projects/new">
           <el-icon><Plus /></el-icon>
           <span>新建项目</span>
+        </RouterLink>
+        <div v-if="canManageSystem" class="nav-group-label">系统管理</div>
+        <RouterLink v-if="auth.hasPermission('system:user:list')" class="nav-item" :class="{ active: isActive('/system/users') }" to="/system/users">
+          <el-icon><UserFilled /></el-icon>
+          <span>用户管理</span>
+        </RouterLink>
+        <RouterLink v-if="auth.hasPermission('system:role:list')" class="nav-item" :class="{ active: isActive('/system/roles') }" to="/system/roles">
+          <el-icon><Key /></el-icon>
+          <span>角色管理</span>
+        </RouterLink>
+        <RouterLink v-if="auth.hasPermission('system:permission:list')" class="nav-item" :class="{ active: isActive('/system/permissions') }" to="/system/permissions">
+          <el-icon><Key /></el-icon>
+          <span>权限目录</span>
+        </RouterLink>
+        <RouterLink v-if="auth.hasPermission('system:department:list')" class="nav-item" :class="{ active: isActive('/system/departments') }" to="/system/departments">
+          <el-icon><FolderOpened /></el-icon>
+          <span>部门管理</span>
+        </RouterLink>
+        <RouterLink v-if="auth.hasPermission('system:audit:list')" class="nav-item" :class="{ active: isActive('/system/audit') }" to="/system/audit">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>操作审计</span>
         </RouterLink>
       </nav>
       <div class="aside-note">
@@ -133,6 +155,12 @@ async function logout() {
 .app-nav {
   display: grid;
   gap: 6px;
+}
+
+.nav-group-label {
+  margin: 14px 12px 2px;
+  color: #71869d;
+  font-size: 11px;
 }
 
 .nav-item {

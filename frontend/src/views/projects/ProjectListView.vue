@@ -53,7 +53,7 @@ onMounted(loadProjects)
     </div>
     <div class="page-actions">
       <el-button :icon="Refresh" :loading="loading" @click="loadProjects">刷新</el-button>
-      <el-button v-if="auth.user?.role === 'pmo'" type="primary" :icon="Plus" @click="router.push('/projects/new')">新建项目</el-button>
+      <el-button v-if="auth.hasPermission('project:create')" type="primary" :icon="Plus" @click="router.push('/projects/new')">新建项目</el-button>
     </div>
   </div>
 
@@ -65,9 +65,9 @@ onMounted(loadProjects)
         <el-option label="执行中" value="active" />
         <el-option label="已完成" value="completed" />
         <el-option label="已暂停" value="paused" />
-        <el-option v-if="auth.user?.role === 'pmo'" label="已归档" value="archived" />
+        <el-option v-if="auth.hasPermission('project:archive')" label="已归档" value="archived" />
       </el-select>
-      <el-checkbox v-if="auth.user?.role === 'pmo'" v-model="includeArchived" @change="loadProjects">查看已归档</el-checkbox>
+      <el-checkbox v-if="auth.hasPermission('project:archive')" v-model="includeArchived" @change="loadProjects">查看已归档</el-checkbox>
     </div>
 
     <el-table v-loading="loading" :data="filteredProjects" row-key="id" empty-text="暂无符合条件的项目" @row-click="openProject">

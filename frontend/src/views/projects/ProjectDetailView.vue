@@ -15,12 +15,12 @@ const router = useRouter()
 const auth = useAuthStore()
 const project = ref<ProjectDetail | null>(null)
 const loading = ref(false)
-const canEdit = computed(() => ['pmo', 'department_head', 'project_manager'].includes(auth.user?.role ?? ''))
+const canEdit = computed(() => auth.hasPermission('project:update'))
 
 async function loadProject() {
   loading.value = true
   try {
-    project.value = await fetchProject(Number(route.params.id), auth.user?.role === 'pmo')
+    project.value = await fetchProject(Number(route.params.id), auth.hasPermission('project:archive'))
   } catch (error) {
     ElMessage.error(getErrorMessage(error, '项目加载失败'))
   } finally {
@@ -56,7 +56,7 @@ onMounted(loadProject)
       </div>
       <div class="page-actions">
         <el-button v-if="canEdit && !project.is_archived" :icon="Edit" @click="router.push(`/projects/${project.id}/edit`)">编辑</el-button>
-        <el-button v-if="auth.user?.role === 'pmo' && !project.is_archived" type="warning" :icon="Warning" @click="archive">归档</el-button>
+        <el-button v-if="auth.hasPermission('project:archive') && !project.is_archived" type="warning" :icon="Warning" @click="archive">归档</el-button>
       </div>
     </div>
 

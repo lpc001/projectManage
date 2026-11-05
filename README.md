@@ -34,7 +34,7 @@
    .\.venv\Scripts\python.exe -m scripts.seed_demo
    ```
 
-   开发种子账号统一使用密码 `ChangeMe123!`，只用于本地验证，正式环境禁止运行种子脚本。
+   开发种子账号统一使用密码 `ChangeMe123!`，只用于本地验证，正式环境禁止运行种子脚本。平台管理员账号为 `admin@example.com`，业务示例账号仍按角色使用对应的 `*@example.com` 账号。
 
 5. 启动后端：
 
