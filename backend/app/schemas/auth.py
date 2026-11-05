@@ -3,6 +3,11 @@ from pydantic import BaseModel, ConfigDict
 from app.models.system import UserRole
 
 
+class RoleSummary(BaseModel):
+    code: str
+    name: str
+
+
 class UserSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -13,8 +18,15 @@ class UserSummary(BaseModel):
     department_id: int
 
 
+class CurrentUserResponse(UserSummary):
+    roles: list[RoleSummary]
+    menu_permission_codes: list[str]
+    action_permission_codes: list[str]
+    api_permission_codes: list[str]
+
+
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str
-    user: UserSummary
+    user: CurrentUserResponse
 

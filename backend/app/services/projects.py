@@ -1,42 +1,67 @@
 from collections.abc import Sequence
 
 from fastapi import HTTPException, status
-from sqlalchemy import Select, select
+from sqlalchemy import Select, exists, or_, select
 from sqlalchemy.orm import Session
 
+from app.models.authorization import DataScopeType
 from app.models.project import Project, ProjectLifecycleStatus, ProjectMember
-from app.models.system import User, UserRole
+from app.models.system import User
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.services.authorization import AuthorizationContext, build_authorization_context
 
 
-MANAGEMENT_ROLES = {UserRole.BOSS, UserRole.PMO, UserRole.DEPARTMENT_HEAD}
-
-
-def _visible_query(user: User) -> Select[tuple[Project]]:
+def _visible_query(user: User, context: AuthorizationContext) -> Select[tuple[Project]]:
     query = select(Project)
-    if user.role in {UserRole.BOSS, UserRole.PMO}:
+    if context.has_all_data_scope:
         return query
-    if user.role == UserRole.DEPARTMENT_HEAD:
-        return query.where(Project.department_id == user.department_id)
-    if user.role == UserRole.PROJECT_MANAGER:
-        return query.where(Project.project_manager_id == user.id)
-    return query.join(ProjectMember).where(ProjectMember.user_id == user.id)
+
+    scope_conditions = []
+    if DataScopeType.DEPARTMENT in context.data_scope_types:
+        scope_conditions.append(Project.department_id == user.department_id)
+    if DataScopeType.CUSTOM_DEPARTMENT in context.data_scope_types and context.custom_department_ids:
+        scope_conditions.append(Project.department_id.in_(context.custom_department_ids))
+    if DataScopeType.OWNED in context.data_scope_types:
+        scope_conditions.append(Project.project_manager_id == user.id)
+    if DataScopeType.MEMBER in context.data_scope_types:
+        scope_conditions.append(
+            exists(
+                select(ProjectMember.id).where(
+                    ProjectMember.project_id == Project.id,
+                    ProjectMember.user_id == user.id,
+                )
+            )
+        )
+    return query.where(or_(*scope_conditions)) if scope_conditions else query.where(False)
 
 
-def list_projects(db: Session, user: User, include_archived: bool = False) -> Sequence[Project]:
-    query = _visible_query(user)
-    if not include_archived or user.role != UserRole.PMO:
+def list_projects(
+    db: Session,
+    user: User,
+    include_archived: bool = False,
+    context: AuthorizationContext | None = None,
+) -> Sequence[Project]:
+    context = context or build_authorization_context(db, user)
+    query = _visible_query(user, context)
+    if not include_archived or not context.has_permission("project:archive"):
         query = query.where(Project.is_archived.is_(False))
     return db.scalars(query.order_by(Project.updated_at.desc(), Project.id.desc())).unique().all()
 
 
-def get_project(db: Session, user: User, project_id: int, include_archived: bool = False) -> Project:
+def get_project(
+    db: Session,
+    user: User,
+    project_id: int,
+    include_archived: bool = False,
+    context: AuthorizationContext | None = None,
+) -> Project:
+    context = context or build_authorization_context(db, user)
     project = db.scalar(select(Project).where(Project.id == project_id))
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="项目不存在")
-    if project.is_archived and not (include_archived and user.role == UserRole.PMO):
+    if project.is_archived and not (include_archived and context.has_permission("project:archive")):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="项目不存在")
-    visible = db.scalar(_visible_query(user).where(Project.id == project_id).limit(1))
+    visible = db.scalar(_visible_query(user, context).where(Project.id == project_id).limit(1))
     if visible is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="项目不存在")
     return project
@@ -62,18 +87,20 @@ def create_project(db: Session, payload: ProjectCreate) -> Project:
     return project
 
 
-def _assert_can_edit(user: User, project: Project) -> None:
-    if user.role in MANAGEMENT_ROLES:
-        if user.role == UserRole.DEPARTMENT_HEAD and user.department_id != project.department_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="不能编辑其他部门项目")
-        return
-    if user.role == UserRole.PROJECT_MANAGER and user.id == project.project_manager_id:
-        return
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="没有编辑此项目的权限")
+def _assert_can_edit(db: Session, user: User, project: Project, context: AuthorizationContext) -> None:
+    if db.scalar(_visible_query(user, context).where(Project.id == project.id).limit(1)) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="没有编辑此项目的权限")
 
 
-def update_project(db: Session, user: User, project: Project, payload: ProjectUpdate) -> Project:
-    _assert_can_edit(user, project)
+def update_project(
+    db: Session,
+    user: User,
+    project: Project,
+    payload: ProjectUpdate,
+    context: AuthorizationContext | None = None,
+) -> Project:
+    context = context or build_authorization_context(db, user)
+    _assert_can_edit(db, user, project, context)
     values = payload.model_dump(exclude_unset=True)
     if "seafile_url" in values:
         values["seafile_url"] = str(values["seafile_url"]) if values["seafile_url"] else None

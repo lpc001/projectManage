@@ -43,6 +43,8 @@ PERMISSION_ROWS = [
     {"code": "system:department:menu", "name": "部门管理菜单", "permission_type": "menu", "route_path": "/system/departments", "sort_order": 40},
     {"code": "system:department:list", "name": "查看部门", "permission_type": "api", "http_method": "GET", "api_path": "/api/system-admin/departments", "sort_order": 41},
     {"code": "system:department:update", "name": "编辑部门", "permission_type": "action", "sort_order": 42},
+    {"code": "system:department:lookup", "name": "读取部门选项", "permission_type": "api", "http_method": "GET", "api_path": "/api/system/departments", "sort_order": 43},
+    {"code": "system:user:lookup", "name": "读取用户选项", "permission_type": "api", "http_method": "GET", "api_path": "/api/system/users", "sort_order": 15},
     {"code": "system:audit:menu", "name": "操作审计菜单", "permission_type": "menu", "route_path": "/system/audit", "sort_order": 50},
     {"code": "system:audit:list", "name": "查看操作审计", "permission_type": "api", "http_method": "GET", "api_path": "/api/system-admin/audit", "sort_order": 51},
     {"code": "project:menu", "name": "项目台账菜单", "permission_type": "menu", "route_path": "/projects", "sort_order": 100},
@@ -197,9 +199,9 @@ def upgrade() -> None:
     platform_permissions = [{"role_id": role_ids["platform_admin"], "permission_id": permission_id} for permission_id in permission_ids.values()]
     project_permissions = {
         "boss": ["project:menu", "project:list"],
-        "department_head": ["project:menu", "project:list", "project:update"],
-        "pmo": ["project:menu", "project:list", "project:create", "project:update", "project:archive"],
-        "project_manager": ["project:menu", "project:list", "project:update"],
+        "department_head": ["project:menu", "project:list", "project:update", "system:department:lookup", "system:user:lookup"],
+        "pmo": ["project:menu", "project:list", "project:create", "project:update", "project:archive", "system:department:lookup", "system:user:lookup"],
+        "project_manager": ["project:menu", "project:list", "project:update", "system:department:lookup", "system:user:lookup"],
         "member": ["project:menu", "project:list"],
     }
     business_permissions = [
