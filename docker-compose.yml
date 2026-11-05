@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: project-manage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: project_manage
+      POSTGRES_USER: project_manage
+      POSTGRES_PASSWORD: project_manage
+    ports:
+      - "5432:5432"
+    volumes:
+      - project_manage_postgres:/var/lib/postgresql/data
+
+volumes:
+  project_manage_postgres:
+

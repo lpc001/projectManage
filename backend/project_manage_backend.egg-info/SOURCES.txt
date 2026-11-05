@@ -1,0 +1,6 @@
+pyproject.toml
+project_manage_backend.egg-info/PKG-INFO
+project_manage_backend.egg-info/SOURCES.txt
+project_manage_backend.egg-info/dependency_links.txt
+project_manage_backend.egg-info/requires.txt
+project_manage_backend.egg-info/top_level.txt
