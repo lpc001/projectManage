@@ -56,6 +56,8 @@ PERMISSION_ROWS = [
 
 
 def upgrade() -> None:
+    op.add_column("sys_department", sa.Column("parent_id", sa.Integer(), nullable=True))
+    op.create_foreign_key("fk_sys_department_parent", "sys_department", "sys_department", ["parent_id"], ["id"])
     op.add_column("sys_user", sa.Column("token_version", sa.Integer(), nullable=False, server_default="0"))
 
     op.create_table(
@@ -238,4 +240,6 @@ def downgrade() -> None:
     op.drop_index("ix_sys_role_code", table_name="sys_role")
     op.drop_table("sys_role")
     op.drop_column("sys_user", "token_version")
+    op.drop_constraint("fk_sys_department_parent", "sys_department", type_="foreignkey")
+    op.drop_column("sys_department", "parent_id")
 

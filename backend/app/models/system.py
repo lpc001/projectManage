@@ -20,9 +20,12 @@ class Department(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     code: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    parent_id: Mapped[int | None] = mapped_column(ForeignKey("sys_department.id"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     users: Mapped[list["User"]] = relationship(back_populates="department")
+    parent: Mapped["Department | None"] = relationship(remote_side="Department.id", back_populates="children")
+    children: Mapped[list["Department"]] = relationship(back_populates="parent")
 
 
 class User(TimestampMixin, Base):
