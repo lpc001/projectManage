@@ -1,8 +1,5 @@
 from pydantic import BaseModel, ConfigDict
 
-from app.models.system import UserRole
-
-
 class RoleSummary(BaseModel):
     code: str
     name: str
@@ -14,7 +11,6 @@ class UserSummary(BaseModel):
     id: int
     username: str
     display_name: str
-    role: UserRole
     department_id: int
 
 

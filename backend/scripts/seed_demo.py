@@ -3,12 +3,13 @@ from passlib.context import CryptContext
 from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.models.authorization import Role, UserRoleLink
-from app.models.system import Department, User, UserRole
+from app.models.system import Department, User
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 DEPARTMENT_CODE = "big-data"
 DEMO_PASSWORD = "ChangeMe123!"
+BUSINESS_ROLE_CODES = ["boss", "department_head", "pmo", "project_manager", "member"]
 
 
 def seed_demo() -> None:
@@ -23,26 +24,25 @@ def seed_demo() -> None:
             db.add(department)
             db.flush()
 
-        for role in UserRole:
-            username = f"{role.value}@example.com"
+        for role_code in BUSINESS_ROLE_CODES:
+            username = f"{role_code}@example.com"
             user = db.query(User).filter_by(username=username).one_or_none()
             if user is None:
                 db.add(
                     User(
                         username=username,
-                        display_name=role.value,
+                        display_name=role_code,
                         password_hash=pwd_context.hash(DEMO_PASSWORD),
-                        role=role,
                         department_id=department.id,
                     )
                 )
         db.flush()
 
         roles = {role.code: role for role in db.query(Role).filter(Role.is_active.is_(True)).all()}
-        for role in UserRole:
-            username = f"{role.value}@example.com"
+        for role_code in BUSINESS_ROLE_CODES:
+            username = f"{role_code}@example.com"
             user = db.query(User).filter_by(username=username).one()
-            target_role = roles.get(role.value)
+            target_role = roles.get(role_code)
             if target_role and db.query(UserRoleLink).filter_by(user_id=user.id, role_id=target_role.id).one_or_none() is None:
                 db.add(UserRoleLink(user_id=user.id, role_id=target_role.id))
 
@@ -52,7 +52,6 @@ def seed_demo() -> None:
                 username="admin@example.com",
                 display_name="平台管理员",
                 password_hash=pwd_context.hash(DEMO_PASSWORD),
-                role=UserRole.PMO,
                 department_id=department.id,
             )
             db.add(admin)

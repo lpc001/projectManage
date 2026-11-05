@@ -20,7 +20,6 @@ def test_multiple_roles_union_permissions_and_scopes(session):
         username="multi-role@example.com",
         display_name="多角色用户",
         password_hash="hash",
-        role="pmo",
         department_id=department_a.id,
     )
     role_a = Role(code="pmo", name="PMO", data_scope=DataScopeType.DEPARTMENT)
@@ -56,7 +55,6 @@ def test_all_scope_dominates_other_scopes(session):
         username="all-scope@example.com",
         display_name="全量用户",
         password_hash="hash",
-        role="pmo",
         department_id=department.id,
     )
     role = Role(code="platform-admin", name="平台管理员", data_scope=DataScopeType.ALL)

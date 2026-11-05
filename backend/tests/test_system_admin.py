@@ -5,7 +5,7 @@ from app.core.security import hash_password
 from app.db.session import get_db
 from app.main import app
 from app.models.authorization import DataScopeType, Permission, PermissionType, Role, RolePermissionLink, UserRoleLink
-from app.models.system import Department, User, UserRole
+from app.models.system import Department, User
 
 
 @pytest.fixture
@@ -46,14 +46,12 @@ def setup_admin(session):
         username="admin@example.com",
         display_name="平台管理员",
         password_hash=hash_password("correct-password"),
-        role=UserRole.PMO,
         department_id=department.id,
     )
     member = User(
         username="member@example.com",
         display_name="项目成员",
         password_hash=hash_password("correct-password"),
-        role=UserRole.MEMBER,
         department_id=department.id,
     )
     session.add_all([admin_role, member_role, *permissions, admin, member])

@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.models.authorization import DataScopeType, Permission, PermissionType, Role
-from app.models.system import Department, User, UserRole
+from app.models.authorization import DataScopeType, Permission, PermissionType, Role, UserRoleLink
+from app.models.system import Department, User
 
 
 def test_all_business_roles_can_be_persisted(session):
@@ -10,21 +10,15 @@ def test_all_business_roles_can_be_persisted(session):
     session.add(department)
     session.flush()
 
-    users = [
-        User(
-            username=f"{role.value}@example.com",
-            display_name=role.value,
-            password_hash="hash",
-            role=role,
-            department_id=department.id,
-        )
-        for role in UserRole
-    ]
-    session.add_all(users)
+    roles = [Role(code=code, name=code, data_scope=DataScopeType.MEMBER) for code in ["boss", "department_head", "pmo", "project_manager", "member"]]
+    users = [User(username=f"{role.code}@example.com", display_name=role.name, password_hash="hash", department_id=department.id) for role in roles]
+    session.add_all(roles + users)
+    session.flush()
+    session.add_all([UserRoleLink(user_id=user.id, role_id=role.id) for user, role in zip(users, roles, strict=True)])
     session.commit()
 
     assert session.query(User).count() == 5
-    assert {user.role for user in session.query(User).all()} == set(UserRole)
+    assert session.query(UserRoleLink).count() == 5
 
 
 def test_usernames_and_department_codes_are_unique(session):
@@ -36,7 +30,6 @@ def test_usernames_and_department_codes_are_unique(session):
             username="pmo@example.com",
             display_name="PMO",
             password_hash="hash",
-            role=UserRole.PMO,
             department_id=department.id,
         )
     )

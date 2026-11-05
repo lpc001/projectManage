@@ -9,15 +9,7 @@ const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
-const roleLabels = {
-  boss: '老板',
-  department_head: '部门负责人',
-  pmo: 'PMO',
-  project_manager: '项目经理',
-  member: '项目成员',
-} as const
-
-const roleLabel = computed(() => auth.user?.roles.map((role) => role.name).join('、') || (auth.user?.role ? roleLabels[auth.user.role] : ''))
+const roleLabel = computed(() => auth.user?.roles.map((role) => role.name).join('、') || '未分配角色')
 const canCreateProject = computed(() => auth.hasPermission('project:create'))
 const canManageSystem = computed(() => auth.hasAnyPermission(['system:user:list', 'system:role:list', 'system:permission:list']))
 

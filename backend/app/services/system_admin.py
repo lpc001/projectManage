@@ -12,7 +12,7 @@ from app.models.authorization import (
     RolePermissionLink,
     UserRoleLink,
 )
-from app.models.system import Department, User, UserRole
+from app.models.system import Department, User
 from app.schemas.authorization import RoleCreate, RoleDataScopeUpdate, RolePermissionUpdate, RoleUpdate
 from app.schemas.system_admin import AdminUserCreate, AdminUserUpdate, DepartmentCreate, DepartmentUpdate
 
@@ -59,12 +59,10 @@ def create_user(db: Session, actor: User, payload: AdminUserCreate) -> User:
     roles = list(db.scalars(select(Role).where(Role.id.in_(payload.role_ids), Role.is_active.is_(True))).all()) if payload.role_ids else []
     if len(roles) != len(set(payload.role_ids)):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="角色不存在或已停用")
-    legacy_role = next((UserRole(role.code) for role in roles if role.code in {item.value for item in UserRole}), UserRole.MEMBER)
     user = User(
         username=payload.username,
         display_name=payload.display_name,
         password_hash=hash_password(payload.password),
-        role=legacy_role,
         department_id=payload.department_id,
     )
     db.add(user)
@@ -92,8 +90,6 @@ def set_user_roles(db: Session, actor: User, user: User, role_ids: list[int]) ->
     user.role_links.clear()
     db.flush()
     db.add_all([UserRoleLink(user_id=user.id, role_id=role.id) for role in roles])
-    legacy_role = next((UserRole(role.code) for role in roles if role.code in {item.value for item in UserRole}), UserRole.MEMBER)
-    user.role = legacy_role
     write_audit(db, actor, action="user.roles.update", target_type="user", target_id=user.id, summary=f"更新用户 {user.username} 的角色")
     db.commit()
     db.refresh(user)

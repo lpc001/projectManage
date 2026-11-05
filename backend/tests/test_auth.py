@@ -5,7 +5,7 @@ from app.core.security import hash_password
 from app.db.session import get_db
 from app.main import app
 from app.models.authorization import DataScopeType, Permission, PermissionType, Role, RolePermissionLink, UserRoleLink
-from app.models.system import Department, User, UserRole
+from app.models.system import Department, User
 
 
 @pytest.fixture
@@ -28,7 +28,6 @@ def create_user(session, *, username="pmo@example.com", is_active=True):
             username=username,
             display_name="PMO",
             password_hash=hash_password("correct-password"),
-            role=UserRole.PMO,
             department_id=department.id,
             is_active=is_active,
         )
@@ -57,7 +56,7 @@ def test_login_returns_access_token_and_user(client, session):
     payload = response.json()
     assert payload["token_type"] == "bearer"
     assert payload["access_token"]
-    assert payload["user"]["role"] == "pmo"
+    assert payload["user"]["roles"][0]["code"] == "pmo"
 
 
 def test_invalid_password_returns_401(client, session):

@@ -4,8 +4,9 @@ from fastapi.testclient import TestClient
 from app.core.security import hash_password
 from app.db.session import get_db
 from app.main import app
+from app.models.authorization import DataScopeType, Permission, PermissionType, Role, RolePermissionLink, UserRoleLink
 from app.models.project import Project, ProjectLifecycleStatus, ProjectMember
-from app.models.system import Department, User, UserRole
+from app.models.system import Department, User
 
 
 @pytest.fixture
@@ -19,16 +20,41 @@ def client(session):
     app.dependency_overrides.clear()
 
 
-def create_user(session, department, role, username):
+def create_user(session, department, role_code, username):
+    scopes = {
+        "pmo": DataScopeType.ALL,
+        "department_head": DataScopeType.DEPARTMENT,
+        "project_manager": DataScopeType.OWNED,
+        "member": DataScopeType.MEMBER,
+    }
+    permissions = {
+        "pmo": {"project:list", "project:create", "project:update", "project:archive", "system:department:lookup", "system:user:lookup"},
+        "department_head": {"project:list", "project:update", "system:department:lookup", "system:user:lookup"},
+        "project_manager": {"project:list", "project:update", "system:department:lookup", "system:user:lookup"},
+        "member": {"project:list"},
+    }
+    role = session.query(Role).filter_by(code=role_code).one_or_none()
+    if role is None:
+        role = Role(code=role_code, name=role_code, data_scope=scopes[role_code])
     user = User(
         username=username,
         display_name=username.split("@")[0],
         password_hash=hash_password("correct-password"),
-        role=role,
         department_id=department.id,
     )
     session.add(user)
+    if role.id is None:
+        session.add(role)
     session.flush()
+    for code in permissions[role_code]:
+        permission = session.query(Permission).filter_by(code=code).one_or_none()
+        if permission is None:
+            permission = Permission(code=code, name=code, permission_type=PermissionType.ACTION if code.endswith((":create", ":update", ":archive")) else PermissionType.API)
+            session.add(permission)
+            session.flush()
+        if session.query(RolePermissionLink).filter_by(role_id=role.id, permission_id=permission.id).one_or_none() is None:
+            session.add(RolePermissionLink(role_id=role.id, permission_id=permission.id))
+    session.add(UserRoleLink(user_id=user.id, role_id=role.id))
     return user
 
 
@@ -38,11 +64,11 @@ def seed_users(session):
     session.add_all([department_a, department_b])
     session.flush()
     users = {
-        "pmo": create_user(session, department_a, UserRole.PMO, "pmo@example.com"),
-        "head_a": create_user(session, department_a, UserRole.DEPARTMENT_HEAD, "head-a@example.com"),
-        "pm_a": create_user(session, department_a, UserRole.PROJECT_MANAGER, "pm-a@example.com"),
-        "pm_b": create_user(session, department_b, UserRole.PROJECT_MANAGER, "pm-b@example.com"),
-        "member": create_user(session, department_a, UserRole.MEMBER, "member@example.com"),
+        "pmo": create_user(session, department_a, "pmo", "pmo@example.com"),
+        "head_a": create_user(session, department_a, "department_head", "head-a@example.com"),
+        "pm_a": create_user(session, department_a, "project_manager", "pm-a@example.com"),
+        "pm_b": create_user(session, department_b, "project_manager", "pm-b@example.com"),
+        "member": create_user(session, department_a, "member", "member@example.com"),
     }
     session.commit()
     return department_a, department_b, users

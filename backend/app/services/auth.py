@@ -26,7 +26,6 @@ def build_current_user_response(db: Session, user: User) -> CurrentUserResponse:
         id=user.id,
         username=user.username,
         display_name=user.display_name,
-        role=user.role,
         department_id=user.department_id,
         roles=[RoleSummary(code=row.code, name=row.name) for row in role_rows],
         menu_permission_codes=sorted(context.menu_permission_codes),

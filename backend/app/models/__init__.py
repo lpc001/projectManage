@@ -9,7 +9,7 @@ from app.models.authorization import (
     UserRoleLink,
 )
 from app.models.project import Project, ProjectLifecycleStatus, ProjectMember
-from app.models.system import Department, User, UserRole
+from app.models.system import Department, User
 
 __all__ = [
     "Department",
@@ -25,6 +25,5 @@ __all__ = [
     "RolePermissionLink",
     "User",
     "UserRoleLink",
-    "UserRole",
 ]
 
