@@ -4,9 +4,9 @@ services:
     container_name: project-manage-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: project_manage
-      POSTGRES_USER: project_manage
-      POSTGRES_PASSWORD: project_manage
+      POSTGRES_DB: pm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:

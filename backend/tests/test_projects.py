@@ -1,5 +1,3 @@
-from datetime import date
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -156,4 +154,33 @@ def test_project_update_rejects_end_date_before_start_date(client, session):
     )
 
     assert response.status_code == 422
+
+
+def test_pmo_can_load_project_setup_options(client, session):
+    department, _, users = seed_users(session)
+    headers = login(client, "pmo@example.com")
+
+    departments = client.get("/api/system/departments", headers=headers)
+    assert departments.status_code == 200
+    assert {item["code"] for item in departments.json()} == {"big-data", "data-product"}
+
+    managers = client.get(
+        f"/api/system/users?role=project_manager&department_id={department.id}",
+        headers=headers,
+    )
+    assert managers.status_code == 200
+    assert [item["id"] for item in managers.json()] == [users["pm_a"].id]
+
+
+def test_project_manager_can_load_own_department_options(client, session):
+    department, _, users = seed_users(session)
+    headers = login(client, "pm-a@example.com")
+
+    departments = client.get("/api/system/departments", headers=headers)
+    assert departments.status_code == 200
+    assert [item["id"] for item in departments.json()] == [department.id]
+
+    managers = client.get("/api/system/users?role=project_manager", headers=headers)
+    assert managers.status_code == 200
+    assert [item["id"] for item in managers.json()] == [users["pm_a"].id]
 

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.auth import router as auth_router
 from app.api.routes.projects import router as projects_router
+from app.api.routes.system import router as system_router
 from app.core.config import get_settings
 
 
@@ -17,6 +18,7 @@ app.add_middleware(
 )
 app.include_router(auth_router, prefix="/api")
 app.include_router(projects_router, prefix="/api")
+app.include_router(system_router, prefix="/api")
 
 
 @app.get("/health", tags=["系统"])
